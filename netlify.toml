@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
+
+[dev]
+  targetPort = 3999
+  publish = "."

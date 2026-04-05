@@ -1,0 +1,11 @@
+{
+  "name": "tech-news-agent",
+  "version": "1.0.0",
+  "description": "An AI agent that curates and summarizes top tech news using Hacker News + Gemini",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@netlify/functions": "latest"
+  }
+}

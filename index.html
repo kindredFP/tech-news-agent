@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tech News Agent</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f1117;
+        color: #e2e8f0;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+
+      header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #60a5fa, #a78bfa);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      header p {
+        color: #94a3b8;
+        margin-top: 0.5rem;
+        font-size: 0.95rem;
+      }
+
+      .agent-badge {
+        display: inline-block;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 99px;
+        padding: 0.3rem 0.9rem;
+        font-size: 0.75rem;
+        color: #60a5fa;
+        margin-top: 0.75rem;
+        letter-spacing: 0.05em;
+      }
+
+      .run-btn {
+        display: block;
+        margin: 0 auto 2.5rem;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: white;
+        border: none;
+        padding: 0.85rem 2.5rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.2s;
+      }
+
+      .run-btn:hover { opacity: 0.85; }
+      .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      .status {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+        min-height: 1.5rem;
+      }
+
+      .agent-steps {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        max-width: 720px;
+        margin: 0 auto 2rem;
+        display: none;
+      }
+
+      .agent-steps h3 {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #64748b;
+        margin-bottom: 0.75rem;
+      }
+
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.4rem 0;
+        font-size: 0.88rem;
+        color: #94a3b8;
+      }
+
+      .step.active { color: #60a5fa; }
+      .step.done { color: #34d399; }
+
+      .step-icon { font-size: 1rem; width: 1.2rem; text-align: center; }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+
+      .card {
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 1.25rem;
+        transition: border-color 0.2s;
+      }
+
+      .card:hover { border-color: #60a5fa; }
+
+      .card-score {
+        font-size: 0.75rem;
+        color: #f59e0b;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+      }
+
+      .card h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.4;
+        margin-bottom: 0.75rem;
+      }
+
+      .card h2 a {
+        color: #e2e8f0;
+        text-decoration: none;
+      }
+
+      .card h2 a:hover { color: #60a5fa; }
+
+      .card-summary {
+        font-size: 0.85rem;
+        color: #94a3b8;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+      }
+
+      .card-meta {
+        display: flex;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+
+      .summary-section {
+        max-width: 720px;
+        margin: 0 auto 2rem;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-left: 3px solid #8b5cf6;
+        border-radius: 10px;
+        padding: 1.25rem;
+        display: none;
+      }
+
+      .summary-section h3 {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #8b5cf6;
+        margin-bottom: 0.75rem;
+      }
+
+      .summary-section p {
+        font-size: 0.9rem;
+        color: #cbd5e1;
+        line-height: 1.7;
+        white-space: pre-wrap;
+      }
+
+      .error {
+        text-align: center;
+        color: #f87171;
+        margin-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🤖 Tech News Agent</h1>
+      <p>Powered by Gemini AI + Hacker News — 100% free tier</p>
+      <span class="agent-badge">⚡ Agentic Loop: Plan → Fetch → Evaluate → Summarize</span>
+    </header>
+
+    <button class="run-btn" id="runBtn" onclick="runAgent()">
+      Run Agent
+    </button>
+
+    <div class="status" id="status"></div>
+
+    <div class="agent-steps" id="agentSteps">
+      <h3>Agent Activity Log</h3>
+      <div class="step" id="step1"><span class="step-icon">🔍</span> Fetching top 20 Hacker News story IDs...</div>
+      <div class="step" id="step2"><span class="step-icon">🧠</span> Agent deciding which 5 stories to investigate...</div>
+      <div class="step" id="step3"><span class="step-icon">🛠️</span> Agent calling fetch_story_details tool in a loop...</div>
+      <div class="step" id="step4"><span class="step-icon">✍️</span> Agent synthesizing final summaries...</div>
+    </div>
+
+    <div class="summary-section" id="summarySection">
+      <h3>🧠 Agent's Full Analysis</h3>
+      <p id="summaryText"></p>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="error" id="error"></div>
+
+    <script>
+      async function runAgent() {
+        const btn = document.getElementById("runBtn");
+        const status = document.getElementById("status");
+        const grid = document.getElementById("grid");
+        const errorDiv = document.getElementById("error");
+        const agentSteps = document.getElementById("agentSteps");
+        const summarySection = document.getElementById("summarySection");
+
+        // Reset UI
+        btn.disabled = true;
+        btn.textContent = "Agent Running...";
+        grid.innerHTML = "";
+        errorDiv.textContent = "";
+        summarySection.style.display = "none";
+        agentSteps.style.display = "block";
+
+        // Animate through agent steps
+        const steps = ["step1", "step2", "step3", "step4"];
+        steps.forEach(id => {
+          document.getElementById(id).className = "step";
+        });
+
+        function setStep(index, done = false) {
+          if (index > 0) {
+            document.getElementById(steps[index - 1]).className = "step done";
+            document.getElementById(steps[index - 1]).querySelector(".step-icon").textContent = "✅";
+          }
+          if (index < steps.length) {
+            document.getElementById(steps[index]).className = "step active";
+          }
+        }
+
+        try {
+          setStep(0); status.textContent = "Step 1/4 — Fetching Hacker News stories...";
+          await delay(600);
+          setStep(1); status.textContent = "Step 2/4 — Agent is planning which stories to fetch...";
+          await delay(400);
+          setStep(2); status.textContent = "Step 3/4 — Agent is calling tools and fetching story details...";
+
+          // Call our Netlify function (the agent)
+          const res = await fetch("/api/agent");
+          if (!res.ok) throw new Error(`Server error: ${res.status}`);
+          const data = await res.json();
+
+          if (data.error) throw new Error(data.error);
+
+          setStep(3); status.textContent = "Step 4/4 — Synthesizing summaries...";
+          await delay(300);
+
+          // Mark all done
+          steps.forEach(id => {
+            document.getElementById(id).className = "step done";
+            document.getElementById(id).querySelector(".step-icon").textContent = "✅";
+          });
+
+          status.textContent = `✅ Agent complete! Curated ${data.stories.length} stories.`;
+
+          // Show agent's full analysis
+          if (data.summary) {
+            summarySection.style.display = "block";
+            document.getElementById("summaryText").textContent = data.summary;
+          }
+
+          // Render story cards
+          data.stories.forEach(story => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <div class="card-score">⬆ ${story.score} points</div>
+              <h2><a href="${story.url}" target="_blank">${story.title}</a></h2>
+              <div class="card-summary">Click the title to read the full story on the original source.</div>
+              <div class="card-meta">
+                <span>👤 ${story.author}</span>
+                <span>💬 ${story.comments} comments</span>
+              </div>
+            `;
+            grid.appendChild(card);
+          });
+
+        } catch (err) {
+          errorDiv.textContent = "Error: " + err.message;
+          status.textContent = "";
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Run Agent Again";
+        }
+      }
+
+      function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+    </script>
+  </body>
+</html>
