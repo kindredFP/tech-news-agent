@@ -76,20 +76,40 @@ async function callGemini(apiKey, messages, withTools = false) {
 // ------ THE AGENT LOOP ---------------------------------------
 async function runAgent(apiKey) {
   // === STEP 1: Fetch top story IDs from Hacker News ===
-  const topStoriesRes = await fetch(
-    "https://hacker-news.firebaseio.com/v0/topstories.json"
-  );
-  const topStoryIds = await topStoriesRes.json();
-  const candidateIds = topStoryIds.slice(0, 20);
+  // Fetch from multiple HN feeds for broader coverage
+  const [topRes, bestRes, newRes] = await Promise.all([
+    fetch("https://hacker-news.firebaseio.com/v0/topstories.json"),
+    fetch("https://hacker-news.firebaseio.com/v0/beststories.json"),
+    fetch("https://hacker-news.firebaseio.com/v0/newstories.json"),
+  ]);
+  const [top, best, newStories] = await Promise.all([
+    topRes.json(), bestRes.json(), newRes.json()
+  ]);
+
+  // Deduplicate and sample from each feed
+  const candidateIds = [...new Set([
+    ...top.slice(0, 15),
+    ...best.slice(0, 10),
+    ...newStories.slice(0, 5)
+  ])];
 
   // === STEP 2: Ask the agent to pick the 5 most interesting ===
-  const systemPrompt = `You are a tech news curator agent. You have access to a tool called fetch_story_details.
-Your job is to:
-1. Review the list of Hacker News story IDs provided
-2. Use the fetch_story_details tool to retrieve details for exactly 5 stories you think will be most interesting to a tech-savvy audience
-3. After fetching all 5, provide a final curated summary of each story
+  const systemPrompt = `You are a tech news curator agent with access to the fetch_story_details tool.
 
-Always fetch exactly 5 stories using the tool before giving your final answer.`;
+Your selection criteria — prioritize stories that are:
+- Novel technical developments (new tools, breakthroughs, releases)
+- High engagement signals (high score or comment count suggests community interest)
+- Diverse topics — avoid selecting 2 stories on the same subject
+- Relevant to software engineers, developers, or AI practitioners
+
+Your process:
+1. Review the candidate story IDs provided
+2. Think about which IDs are most likely to be high-quality based on their position in the list
+3. Fetch details for your top 8 candidates using the tool
+4. After reviewing the details, select the 5 best final stories
+5. Write a concise summary for each: what it is, why it matters, and one key insight
+
+Always fetch at least 8 stories before making your final selection. Quality of selection matters more than speed.`;
 
   const userMessage = `Here are the top Hacker News story IDs right now: ${JSON.stringify(candidateIds)}
 
@@ -146,7 +166,9 @@ Please fetch details for the 5 most promising ones and then summarize them for m
 
 // ------ NETLIFY FUNCTION HANDLER -----------------------------
 export default async (req) => {
-  const apiKey = Netlify.env.get("GEMINI_API_KEY");
+
+  const apiKey = Netlify.env.get("MY_GEMINI_KEY");
+  console.log("API Key found:", apiKey ? `${apiKey.substring(0, 10)}...` : "NOT FOUND");
 
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "GEMINI_API_KEY not set" }), {
