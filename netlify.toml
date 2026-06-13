@@ -3,6 +3,10 @@
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[functions."agent"]
+  timeout = 30
 
 [dev]
   targetPort = 3999

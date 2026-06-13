@@ -1,0 +1,32 @@
+functionsDirectory = "/Users/kindred/Documents/gitRepos/tech-news-agent/netlify/functions"
+functionsDirectoryOrigin = "config"
+plugins = []
+headers = []
+redirects = []
+
+[build]
+publish = "/Users/kindred/Documents/gitRepos/tech-news-agent"
+publishOrigin = "config"
+functions = "/Users/kindred/Documents/gitRepos/tech-news-agent/netlify/functions"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
+
+[dev]
+targetPort = 3999.0
+publish = "."
+
+[functions]
+
+[functions."*"]

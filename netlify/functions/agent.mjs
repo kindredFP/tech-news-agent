@@ -29,6 +29,21 @@ const tools = [
       required: ["story_id"],
     },
   },
+  {
+  name: "fetch_article_content",
+  description:
+    "Fetches and extracts the readable text content from a URL. Use this after fetch_story_details to read the actual article before summarizing it. Avoid fetching PDFs or GitHub repo URLs.",
+    parameters: {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          description: "The full URL of the article to fetch and read",
+        },
+      },
+      required: ["url"],
+    },
+  },
 ];
 
 // ------ TOOL EXECUTION ---------------------------------------
@@ -47,6 +62,42 @@ async function executeTool(toolName, args) {
       comments: story.descendants || 0,
     };
   }
+
+  if (toolName === "fetch_article_content") {
+    const url = args.url;
+
+    if (url.includes("github.com") || url.endsWith(".pdf") || url.includes("youtube.com")) {
+      return { content: "Skipped: non-article URL (GitHub/PDF/YouTube). Use the HN title and metadata only." };
+    }
+
+    try {
+      const res = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; TechNewsBot/1.0)" },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!res.ok) return { content: `Failed to fetch: HTTP ${res.status}` };
+
+      const html = await res.text();
+
+      const text = html
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 3000);
+
+      return { content: text || "No readable content extracted." };
+    } catch (err) {
+      return { content: `Fetch error: ${err.message}` };
+    }
+  }
+
   throw new Error(`Unknown tool: ${toolName}`);
 }
 
@@ -104,10 +155,10 @@ Your selection criteria — prioritize stories that are:
 
 Your process:
 1. Review the candidate story IDs provided
-2. Think about which IDs are most likely to be high-quality based on their position in the list
-3. Fetch details for your top 8 candidates using the tool
-4. After reviewing the details, select the 5 best final stories
-5. Write a concise summary for each: what it is, why it matters, and one key insight
+2. Fetch details for your top 8 candidates using fetch_story_details
+3. For each story with a real article URL (not just HN discussion links), call fetch_article_content to read it
+4. After reviewing the full content, select the 5 best final stories
+5. Write a concise summary for each using the actual article content: what it is, why it matters, and one key insight
 
 Always fetch at least 8 stories before making your final selection. Quality of selection matters more than speed.`;
 

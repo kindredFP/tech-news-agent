@@ -1,0 +1,21 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Milton",
+			"country": {
+				"code": "CA",
+				"name": "Canada"
+			},
+			"subdivision": {
+				"code": "ON",
+				"name": "Ontario"
+			},
+			"timezone": "America/Toronto",
+			"latitude": 43.5142,
+			"longitude": -79.8845,
+			"postalCode": "L9T"
+		},
+		"timestamp": 1781328792596
+	},
+	"siteId": "3bf99d48-483f-4759-aed8-f097a5b947db"
+}
