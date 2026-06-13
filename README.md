@@ -14,8 +14,9 @@ Most LLM apps send one prompt and get one response. This project implements a ge
 1. Fetch 30 candidate story IDs from Hacker News (top, best, new feeds)
 2. LLM decides which 8 stories are worth investigating
 3. Agent executes fetch_story_details tool for each — in a loop
-4. LLM evaluates the full details and selects the best 5
-5. LLM synthesizes a final summary with key insights
+4. Agent executes fetch_article_content tool to read the actual article content
+5. LLM evaluates the full details and selects the best 5
+6. LLM synthesizes a final summary with key insights
 ```
 
 The LLM is actively driving the process — choosing what to fetch, evaluating results, and deciding when it has enough information. That's what distinguishes an agent from a single prompt.
@@ -43,9 +44,10 @@ The agent function (`netlify/functions/agent.mjs`) implements the full loop:
 | 1 | Fetch story IDs from 3 HN feeds in parallel |
 | 2 | Send candidate IDs to Gemini with tool definitions |
 | 3 | Gemini calls `fetch_story_details` tool for chosen IDs |
-| 4 | Function executes each tool call, feeds results back |
-| 5 | Loop continues until Gemini stops calling tools |
-| 6 | Gemini writes final summaries, function returns JSON |
+| 4 | Gemini calls `fetch_article_content` to read actual article text |
+| 5 | Function executes each tool call, feeds results back |
+| 6 | Loop continues until Gemini stops calling tools |
+| 7 | Gemini writes final summaries, function returns JSON |
 
 ## 🚀 Quick Start
 
@@ -126,14 +128,15 @@ Edit the system prompt in `netlify/functions/agent.mjs` to change:
 - Number of final stories returned (currently 5)
 - Selection criteria and topic preferences
 - Summary format and length
+- Whether to fetch full article content (fetch_article_content tool)
 
 ## 🐛 Known Gotchas
 
 **Netlify AI Gateway intercepts `GEMINI_API_KEY` locally**
 When running `netlify dev`, Netlify injects its own AI Gateway JWT as the value of `GEMINI_API_KEY`, overwriting your `.env` value. This causes `API key not valid` errors from Gemini. The fix is to use a differently-named variable (`MY_GEMINI_KEY`) for local development. This does not affect production deployments.
 
-**Agent takes 10–20 seconds to respond**
-This is expected — the agent makes multiple sequential calls to Gemini and the Hacker News API. The UI shows a live activity log so users can see progress.
+**Agent takes 20–40 seconds to respond**
+This is expected — the agent now makes multiple sequential calls to Gemini, the Hacker News API, and fetches actual article content. The 30-second function timeout in `netlify.toml` accommodates this. The UI shows a live activity log so users can see progress.
 
 ## 🤝 Contributing
 
