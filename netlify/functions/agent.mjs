@@ -261,7 +261,7 @@ export default async (req) => {
   } catch (err) {
     console.error("Agent error:", err);
     return new Response(
-      JSON.stringify({ error: err.message, stack: err.stack }),
+      JSON.stringify({ error: "Internal server error" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
