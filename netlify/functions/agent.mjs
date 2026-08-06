@@ -66,7 +66,24 @@ async function executeTool(toolName, args) {
   if (toolName === "fetch_article_content") {
     const url = args.url;
 
-    if (url.includes("github.com") || url.endsWith(".pdf") || url.includes("youtube.com")) {
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return { content: "Skipped: invalid URL." };
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const pathname = parsedUrl.pathname.toLowerCase();
+    const isGithub = hostname === "github.com" || hostname.endsWith(".github.com");
+    const isYoutube =
+      hostname === "youtube.com" ||
+      hostname.endsWith(".youtube.com") ||
+      hostname === "youtu.be" ||
+      hostname.endsWith(".youtu.be");
+    const isPdf = pathname.endsWith(".pdf");
+
+    if (isGithub || isPdf || isYoutube) {
       return { content: "Skipped: non-article URL (GitHub/PDF/YouTube). Use the HN title and metadata only." };
     }
 
