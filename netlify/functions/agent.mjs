@@ -85,8 +85,8 @@ async function executeTool(toolName, args) {
       do {
         previousHtml = sanitizedHtml;
         sanitizedHtml = sanitizedHtml
-          .replace(/<script[\s\S]*?<\/script>/gi, "")
-          .replace(/<style[\s\S]*?<\/style>/gi, "");
+          .replace(/<script\b[^>]*>[\s\S]*?<\/script\b[^>]*>/gi, "")
+          .replace(/<style\b[^>]*>[\s\S]*?<\/style\b[^>]*>/gi, "");
       } while (sanitizedHtml !== previousHtml);
 
       const text = sanitizedHtml
