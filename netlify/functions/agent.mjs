@@ -219,7 +219,7 @@ Please fetch details for the 5 most promising ones and then summarize them for m
 export default async (req) => {
 
   const apiKey = Netlify.env.get("MY_GEMINI_KEY");
-  console.log("API Key found:", apiKey ? `${apiKey.substring(0, 10)}...` : "NOT FOUND");
+  console.log("API Key configured:", apiKey ? "YES" : "NO");
 
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "GEMINI_API_KEY not set" }), {
